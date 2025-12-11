@@ -3,18 +3,55 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
+import random
 
-# Streamlit Color Dice Game
-# - Interactive play mode with animated dice
-# - Monte Carlo simulation mode with analysis
-# - Fair vs Tweaked game modes
+# DICE-EM! - Stochastic Game Simulation
+# A Boston mafia-style color dice game with sinister tweaks
+# Developed by: Maria Angela Matubis, Lj Jan Saldivar, Jester Carlo Tapit
 
-st.set_page_config(page_title="Color Dice Game", page_icon="🎲", layout="wide")
+st.set_page_config(page_title="DICE-EM!", page_icon="🎲", layout="wide")
 
 # Game configuration
 colors = ["Red", "Blue", "Yellow", "Green", "White", "Purple"]
 fair_probabilities = [1/6] * 6
-tweaked_probabilities = [0.13, 0.174, 0.174, 0.174, 0.174, 0.174]
+
+# Difficulty levels for tweaked game
+DIFFICULTY_LEVELS = {
+    "Slightly Rigged": {
+        "probabilities": [0.14, 0.172, 0.172, 0.172, 0.172, 0.172],
+        "payout_multiplier": 4.9,
+        "description": "Barely noticeable... or is it?"
+    },
+    "Moderately Unfair": {
+        "probabilities": [0.12, 0.176, 0.176, 0.176, 0.176, 0.176],
+        "payout_multiplier": 4.5,
+        "description": "The house is smilin' now"
+    },
+    "Heavily Stacked": {
+        "probabilities": [0.10, 0.18, 0.18, 0.18, 0.18, 0.18],
+        "payout_multiplier": 4.0,
+        "description": "You're gonna lose, pal"
+    },
+    "Almost Impossible": {
+        "probabilities": [0.05, 0.19, 0.19, 0.19, 0.19, 0.19],
+        "payout_multiplier": 3.5,
+        "description": "Don't even bother tryin'"
+    }
+}
+
+# Boston mafia-style captions
+MAFIA_CAPTIONS = [
+    "Try your luck, you won't have one.",
+    "You sure you wanna play?",
+    "GO, play it.",
+    "You're really testing your luck here.",
+    "Good Luck, you're gonna need it.",
+    "The house always wins, capisce?",
+    "Think you're tough? Prove it.",
+    "Your money, my pocket. Let's dance.",
+    "Feelin' lucky, punk?",
+    "One more roll... what's the worst that could happen?"
+]
 
 UNICODE_DICE = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"]
 COLOR_HEX = {
@@ -25,6 +62,100 @@ COLOR_HEX = {
     "White": "#f8f9fa",
     "Purple": "#9b59b6",
 }
+
+# Custom CSS for themes
+def load_custom_css(mode):
+    if mode == "Fair":
+        # Fun, playful theme
+        st.markdown("""
+        <style>
+        .main {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .stButton>button {
+            background: linear-gradient(90deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+            font-weight: bold;
+            border-radius: 20px;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .stButton>button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        h1, h2, h3 {
+            color: #ffffff !important;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .dice-container {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    else:
+        # Sinister, evil theme
+        st.markdown("""
+        <style>
+        .main {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0e17 100%);
+        }
+        .stButton>button {
+            background: linear-gradient(90deg, #8b0000 0%, #dc143c 50%, #8b0000 100%);
+            color: #ffffff;
+            font-weight: bold;
+            border-radius: 10px;
+            border: 2px solid #ff0000;
+            padding: 12px 24px;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(255,0,0,0.5);
+            text-shadow: 0 0 10px rgba(255,0,0,0.8);
+        }
+        .stButton>button:hover {
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: 0 0 30px rgba(255,0,0,0.8);
+            background: linear-gradient(90deg, #dc143c 0%, #8b0000 50%, #dc143c 100%);
+        }
+        h1, h2, h3 {
+            color: #ff4444 !important;
+            text-shadow: 0 0 10px rgba(255,0,0,0.5), 2px 2px 4px rgba(0,0,0,0.8);
+            font-family: 'Courier New', monospace;
+        }
+        .dice-container {
+            background: linear-gradient(135deg, #2d1b1b 0%, #1a0505 100%);
+            border: 3px solid #8b0000;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 40px rgba(255,0,0,0.4), inset 0 0 20px rgba(0,0,0,0.8);
+            animation: sinister-pulse 1.5s infinite;
+        }
+        @keyframes sinister-pulse {
+            0%, 100% { 
+                box-shadow: 0 0 40px rgba(255,0,0,0.4), inset 0 0 20px rgba(0,0,0,0.8);
+            }
+            50% { 
+                box-shadow: 0 0 60px rgba(255,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.9);
+                transform: scale(1.01);
+            }
+        }
+        .sidebar .sidebar-content {
+            background: linear-gradient(180deg, #1a0505 0%, #0a0000 100%);
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
 
 # Initialize session state
 if 'total_profit' not in st.session_state:
@@ -39,9 +170,15 @@ if 'last_outcome' not in st.session_state:
     st.session_state.last_outcome = None
 if 'last_profit' not in st.session_state:
     st.session_state.last_profit = None
+if 'mafia_caption' not in st.session_state:
+    st.session_state.mafia_caption = random.choice(MAFIA_CAPTIONS)
+if 'dice_animation' not in st.session_state:
+    st.session_state.dice_animation = False
+if 'animation_frames' not in st.session_state:
+    st.session_state.animation_frames = []
 
 # Simulation functions
-def simulate_game(mode, plays=20000, bet=1.0, tweak_type="payout"):
+def simulate_game(mode, plays=20000, bet=1.0, difficulty="Slightly Rigged"):
     """Run Monte Carlo simulation"""
     chosen_color = "Red"
     chosen_idx = colors.index(chosen_color)
@@ -51,12 +188,9 @@ def simulate_game(mode, plays=20000, bet=1.0, tweak_type="payout"):
         probs = p_fair
         payout_net = (1 - p_fair[chosen_idx]) / p_fair[chosen_idx]  # Fair payout = 5.0
     elif mode == "tweaked":
-        if tweak_type == "payout":
-            probs = p_fair
-            payout_net = 4.8  # Slightly lower payout
-        else:  # prob tweak
-            probs = np.array([0.2] + [0.8 / 5.0] * 5)  # Red has 20% chance
-            payout_net = (1 - probs[chosen_idx]) / probs[chosen_idx]
+        difficulty_config = DIFFICULTY_LEVELS[difficulty]
+        probs = np.array(difficulty_config["probabilities"])
+        payout_net = difficulty_config["payout_multiplier"]
     else:
         raise ValueError("Unknown mode")
     
@@ -72,7 +206,7 @@ def simulate_game(mode, plays=20000, bet=1.0, tweak_type="payout"):
     
     return {
         "mode": mode,
-        "tweak": tweak_type,
+        "difficulty": difficulty if mode == "tweaked" else "N/A",
         "plays": plays,
         "bet": bet,
         "profits": profits,
@@ -83,307 +217,526 @@ def simulate_game(mode, plays=20000, bet=1.0, tweak_type="payout"):
         "house_edge": float(house_edge),
     }
 
-def play_round(mode, bet_amount):
+def play_round(mode, bet_amount, difficulty="Slightly Rigged"):
     """Play one round and return outcome and profit"""
-    probs = fair_probabilities if mode == "Fair" else tweaked_probabilities
+    if mode == "Fair":
+        probs = fair_probabilities
+        payout_multiplier = 5.0
+    else:
+        difficulty_config = DIFFICULTY_LEVELS[difficulty]
+        probs = difficulty_config["probabilities"]
+        payout_multiplier = difficulty_config["payout_multiplier"]
+    
     outcome = np.random.choice(colors, p=probs)
     
     if outcome == "Red":
-        payout_multiplier = 2.0 if mode == "Fair" else 1.9
         profit = bet_amount * payout_multiplier - bet_amount
     else:
         profit = -bet_amount
     
     return outcome, profit
 
-# Title and tabs
-st.title("🎲 Color Dice Game: Perya Simulation")
-st.markdown("### Stochastic Game Simulation - Fair vs Tweaked Models")
+def animate_dice(mode, placeholder, num_spins=15):
+    """Animate dice rolling"""
+    spin_delay = 0.05 if mode == "Fair" else 0.08
+    
+    for i in range(num_spins):
+        # Random dice face and color
+        random_idx = np.random.randint(0, 6)
+        random_color = colors[random_idx]
+        color_bg = COLOR_HEX[random_color]
+        
+        # More chaotic animation for tweaked mode
+        rotation = 0 if mode == "Fair" else random.randint(-15, 15)
+        scale = 1.0 if mode == "Fair" else random.uniform(0.95, 1.05)
+        
+        text_color = '#000' if random_color in ['White', 'Yellow'] else '#fff'
+        
+        placeholder.markdown(f"""
+            <div class="dice-container" style="text-align: center; transform: rotate({rotation}deg) scale({scale}); transition: all 0.1s;">
+                <div style="background-color: {color_bg}; border-radius: 20px; padding: 20px; display: inline-block;">
+                    <h1 style="font-size: 100px; margin: 0; color: {text_color};">
+                        {UNICODE_DICE[random_idx]}
+                    </h1>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        time.sleep(spin_delay)
+    
+    return True
 
-tab1, tab2, tab3 = st.tabs(["🎮 Interactive Play", "📊 Monte Carlo Simulation", "ℹ️ About"])
+# Title and caption
+st.markdown(f"""
+    <h1 style='text-align: center; font-size: 72px; margin-bottom: 0;'>
+        🎲 DICE-EM! 🎲
+    </h1>
+    <p style='text-align: center; font-size: 24px; font-style: italic; margin-top: 10px; opacity: 0.9;'>
+        "{st.session_state.mafia_caption}"
+    </p>
+""", unsafe_allow_html=True)
+
+st.markdown("---")
+
+# Sidebar for settings
+with st.sidebar:
+    st.header("⚙️ Game Settings")
+    
+    # Mode selection
+    play_mode = st.radio(
+        "Choose Your Fate:",
+        ["Fair", "Tweaked"],
+        help="Fair: Honest game. Tweaked: The house has... advantages."
+    )
+    
+    # Load theme based on mode
+    load_custom_css(play_mode)
+    
+    # Difficulty for tweaked mode
+    difficulty = None
+    if play_mode == "Tweaked":
+        st.markdown("### 😈 Difficulty Level")
+        difficulty = st.select_slider(
+            "How much pain?",
+            options=list(DIFFICULTY_LEVELS.keys()),
+            value="Moderately Unfair"
+        )
+        st.caption(DIFFICULTY_LEVELS[difficulty]["description"])
+    
+    st.markdown("---")
+    
+    # Bet amount
+    bet_amount = st.number_input(
+        "💰 Bet Amount:",
+        min_value=1,
+        max_value=1000,
+        value=10,
+        step=5
+    )
+    
+    st.markdown("---")
+    
+    # Developer credits
+    st.markdown("### 👥 Developed By:")
+    st.markdown("""
+    - **Maria Angela Matubis**
+    - **Lj Jan Saldivar**
+    - **Jester Carlo Tapit**
+    """)
+    
+    st.markdown("---")
+    st.caption("© 2025 DICE-EM! | Perya Simulation")
+
+tab1, tab2, tab3 = st.tabs(["🎮 Play Now", "📊 Run Simulation", "ℹ️ About"])
 
 # Tab 1: Interactive Play
 with tab1:
-    st.header("Play the Color Dice Game")
+    col_left, col_right = st.columns([3, 2])
     
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        st.subheader("Game Settings")
-        play_mode = st.radio("Game Mode:", ["Fair", "Tweaked"], 
-                             help="Fair: Equal odds. Tweaked: House edge via reduced payout.")
-        bet_amount = st.number_input("Bet Amount:", min_value=1, max_value=1000, value=10, step=5)
+    with col_left:
+        st.subheader("🎲 Dice Roll Area")
         
-        if st.button("🎲 Roll Dice", type="primary", use_container_width=True):
-            outcome, profit = play_round(play_mode, bet_amount)
-            st.session_state.last_outcome = outcome
-            st.session_state.last_profit = profit
-            st.session_state.total_profit += profit
-            st.session_state.plays += 1
-            st.session_state.history.append(profit)
-            st.session_state.outcome_history.append(outcome)
-            st.rerun()
-        
-        if st.button("🔄 Reset Game", use_container_width=True):
-            st.session_state.total_profit = 0.0
-            st.session_state.plays = 0
-            st.session_state.history = []
-            st.session_state.outcome_history = []
-            st.session_state.last_outcome = None
-            st.session_state.last_profit = None
-            st.rerun()
-        
-        st.divider()
-        st.metric("Total Plays", st.session_state.plays)
-        st.metric("Total Profit", f"${st.session_state.total_profit:.2f}", 
-                 delta=f"${st.session_state.last_profit:.2f}" if st.session_state.last_profit else None)
-    
-    with col2:
-        st.subheader("Dice Result")
+        # Dice display area
+        dice_placeholder = st.empty()
+        result_placeholder = st.empty()
         
         if st.session_state.last_outcome:
             outcome = st.session_state.last_outcome
             idx = colors.index(outcome)
             color_bg = COLOR_HEX[outcome]
+            text_color = '#000' if outcome in ['White', 'Yellow'] else '#fff'
             
-            # Display large dice with color background
-            st.markdown(f"""
-                <div style="text-align: center; padding: 40px; background-color: {color_bg}; 
-                            border-radius: 20px; margin: 20px 0;">
-                    <h1 style="font-size: 120px; margin: 0; 
-                               color: {'#000' if outcome in ['White', 'Yellow'] else '#fff'};">
-                        {UNICODE_DICE[idx]}
-                    </h1>
-                    <h2 style="margin: 10px 0; 
-                               color: {'#000' if outcome in ['White', 'Yellow'] else '#fff'};">
-                        {outcome}
-                    </h2>
+            dice_placeholder.markdown(f"""
+                <div class="dice-container" style="text-align: center;">
+                    <div style="background-color: {color_bg}; border-radius: 20px; padding: 30px; display: inline-block; min-width: 200px;">
+                        <h1 style="font-size: 120px; margin: 0; color: {text_color};">
+                            {UNICODE_DICE[idx]}
+                        </h1>
+                        <h2 style="margin: 10px 0; color: {text_color}; font-size: 32px;">
+                            {outcome}
+                        </h2>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
             
             if st.session_state.last_profit > 0:
-                st.success(f"🎉 You won ${st.session_state.last_profit:.2f}!")
+                result_placeholder.success(f"🎉 WINNER! You won ${st.session_state.last_profit:.2f}!", icon="💰")
             else:
-                st.error(f"😢 You lost ${abs(st.session_state.last_profit):.2f}")
+                result_placeholder.error(f"💀 YOU LOSE! Lost ${abs(st.session_state.last_profit):.2f}", icon="😈")
         else:
-            st.info("Click 'Roll Dice' to start playing!")
+            dice_placeholder.markdown("""
+                <div class="dice-container" style="text-align: center;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 30px; display: inline-block; min-width: 200px;">
+                        <h1 style="font-size: 120px; margin: 0; color: white;">
+                            ⚀
+                        </h1>
+                        <h2 style="margin: 10px 0; color: white; font-size: 24px;">
+                            Ready to roll?
+                        </h2>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
         
-        # Show history charts if available
+        # Action buttons
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            if st.button("🎲 ROLL THE DICE", type="primary", use_container_width=True):
+                # Animate dice
+                animate_dice(play_mode, dice_placeholder, num_spins=15 if play_mode == "Fair" else 20)
+                
+                # Play round
+                outcome, profit = play_round(play_mode, bet_amount, difficulty if difficulty else "Slightly Rigged")
+                st.session_state.last_outcome = outcome
+                st.session_state.last_profit = profit
+                st.session_state.total_profit += profit
+                st.session_state.plays += 1
+                st.session_state.history.append(profit)
+                st.session_state.outcome_history.append(outcome)
+                st.rerun()
+        
+        with col_btn2:
+            if st.button("🔄 Reset Game", use_container_width=True):
+                st.session_state.total_profit = 0.0
+                st.session_state.plays = 0
+                st.session_state.history = []
+                st.session_state.outcome_history = []
+                st.session_state.last_outcome = None
+                st.session_state.last_profit = None
+                st.session_state.mafia_caption = random.choice(MAFIA_CAPTIONS)
+                st.rerun()
+    
+    with col_right:
+        st.subheader("📊 Your Stats")
+        
+        # Metrics
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            st.metric("Total Plays", st.session_state.plays)
+        with col_m2:
+            profit_delta = f"${st.session_state.last_profit:.2f}" if st.session_state.last_profit else None
+            st.metric("Total Profit", f"${st.session_state.total_profit:.2f}", delta=profit_delta)
+        
+        # Show history charts
         if len(st.session_state.history) > 1:
-            st.subheader("Your Game History")
+            st.markdown("#### 📈 Performance")
             
-            col_a, col_b = st.columns(2)
+            # Cumulative profit
+            fig, ax = plt.subplots(figsize=(6, 3))
+            cumulative = np.cumsum(st.session_state.history)
+            ax.plot(cumulative, linewidth=2, color='#e74c3c' if cumulative[-1] < 0 else '#10b981')
+            ax.axhline(y=0, color='white', linestyle='--', alpha=0.5)
+            ax.set_title("Cumulative Profit", fontsize=12, color='white')
+            ax.set_xlabel("Play Number", fontsize=10, color='white')
+            ax.set_ylabel("Total Profit ($)", fontsize=10, color='white')
+            ax.set_facecolor('#1a1a2e' if play_mode == "Tweaked" else '#667eea')
+            fig.patch.set_facecolor('none')
+            ax.tick_params(colors='white')
+            ax.spines['bottom'].set_color('white')
+            ax.spines['left'].set_color('white')
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.grid(alpha=0.2, color='white')
+            st.pyplot(fig)
+            plt.close()
             
-            with col_a:
-                # Cumulative profit chart
-                fig, ax = plt.subplots(figsize=(5, 3))
-                ax.plot(np.cumsum(st.session_state.history), linewidth=2)
-                ax.set_title("Cumulative Profit", fontsize=10)
-                ax.set_xlabel("Play Number", fontsize=9)
-                ax.set_ylabel("Total Profit ($)", fontsize=9)
-                ax.grid(alpha=0.3)
-                st.pyplot(fig)
-                plt.close()
+            # Win/Loss distribution
+            wins = sum(1 for p in st.session_state.history if p > 0)
+            losses = sum(1 for p in st.session_state.history if p <= 0)
             
-            with col_b:
-                # Profit distribution
-                fig, ax = plt.subplots(figsize=(5, 3))
-                ax.hist(st.session_state.history, bins=12, alpha=0.7, color='steelblue')
-                ax.set_title("Profit Distribution", fontsize=10)
-                ax.set_xlabel("Profit per Play ($)", fontsize=9)
-                ax.set_ylabel("Frequency", fontsize=9)
-                ax.grid(alpha=0.3)
-                st.pyplot(fig)
-                plt.close()
+            st.markdown("#### 🎯 Win/Loss Ratio")
+            col_w, col_l = st.columns(2)
+            with col_w:
+                st.metric("Wins", wins, f"{wins/len(st.session_state.history)*100:.1f}%")
+            with col_l:
+                st.metric("Losses", losses, f"{losses/len(st.session_state.history)*100:.1f}%")
+        else:
+            st.info("Roll the dice to start tracking your stats!")
+
 
 # Tab 2: Monte Carlo Simulation
 with tab2:
-    st.header("Monte Carlo Simulation & Analysis")
-    st.markdown("Run thousands of simulated plays to analyze the house edge and compare fair vs tweaked models.")
+    st.header("📊 Monte Carlo Simulation & Analysis")
+    st.markdown("Run thousands of simulated plays to analyze the house edge and compare outcomes.")
     
-    col1, col2 = st.columns([1, 2])
+    # Simulation settings in columns
+    col_sim1, col_sim2, col_sim3 = st.columns(3)
     
-    with col1:
-        st.subheader("Simulation Parameters")
+    with col_sim1:
         num_plays = st.slider("Number of plays:", 1000, 100000, 20000, 1000)
-        sim_bet = st.number_input("Bet per play:", min_value=0.1, max_value=100.0, value=1.0, step=0.5)
-        tweak_mode = st.selectbox("Tweak Type:", ["payout", "prob"], 
-                                   help="Payout: Reduce payout. Prob: Weighted probabilities.")
-        
-        if st.button("▶️ Run Simulation", type="primary", use_container_width=True):
-            with st.spinner("Running simulations..."):
-                fair_results = simulate_game("fair", plays=num_plays, bet=sim_bet, tweak_type=tweak_mode)
-                tweaked_results = simulate_game("tweaked", plays=num_plays, bet=sim_bet, tweak_type=tweak_mode)
-                
-                st.session_state.fair_sim = fair_results
-                st.session_state.tweaked_sim = tweaked_results
-            st.success("✅ Simulation complete!")
-            st.rerun()
     
-    with col2:
-        if 'fair_sim' in st.session_state and 'tweaked_sim' in st.session_state:
-            st.subheader("Simulation Results")
+    with col_sim2:
+        sim_bet = st.number_input("Bet per play:", min_value=0.1, max_value=100.0, value=1.0, step=0.5)
+    
+    with col_sim3:
+        sim_difficulty = st.selectbox("Tweaked Difficulty:", list(DIFFICULTY_LEVELS.keys()), index=1)
+    
+    if st.button("▶️ Run Full Simulation", type="primary", use_container_width=True):
+        with st.spinner("Running Monte Carlo simulations... The house is counting your money."):
+            fair_results = simulate_game("fair", plays=num_plays, bet=sim_bet)
+            tweaked_results = simulate_game("tweaked", plays=num_plays, bet=sim_bet, difficulty=sim_difficulty)
             
-            # Summary metrics
-            col_fair, col_tweaked = st.columns(2)
+            st.session_state.fair_sim = fair_results
+            st.session_state.tweaked_sim = tweaked_results
+        st.success("✅ Simulation complete! Check the results below.")
+        st.rerun()
+    
+    if 'fair_sim' in st.session_state and 'tweaked_sim' in st.session_state:
+        st.markdown("---")
+        st.subheader("🎯 Simulation Results")
+        
+        # Summary metrics
+        col_fair, col_tweaked = st.columns(2)
+        
+        with col_fair:
+            st.markdown("### 🟢 Fair Game")
+            fair = st.session_state.fair_sim
             
-            with col_fair:
-                st.markdown("#### 🟢 Fair Game")
-                fair = st.session_state.fair_sim
+            metric_col1, metric_col2 = st.columns(2)
+            with metric_col1:
                 st.metric("Win Rate", f"{fair['win_rate']*100:.2f}%")
                 st.metric("Mean Profit/Play", f"${fair['mean']:.4f}")
+            with metric_col2:
                 st.metric("House Edge", f"{fair['house_edge']*100:.4f}%")
                 st.metric("Total Profit", f"${fair['total']:.2f}")
-                st.caption(f"Std Dev: ${fair['std']:.4f}")
             
-            with col_tweaked:
-                st.markdown("#### 🔴 Tweaked Game")
-                tweaked = st.session_state.tweaked_sim
+            st.caption(f"Standard Deviation: ${fair['std']:.4f}")
+            st.caption(f"Plays: {fair['plays']:,}")
+        
+        with col_tweaked:
+            st.markdown("### 🔴 Tweaked Game")
+            tweaked = st.session_state.tweaked_sim
+            
+            metric_col1, metric_col2 = st.columns(2)
+            with metric_col1:
                 st.metric("Win Rate", f"{tweaked['win_rate']*100:.2f}%")
                 st.metric("Mean Profit/Play", f"${tweaked['mean']:.4f}")
+            with metric_col2:
                 st.metric("House Edge", f"{tweaked['house_edge']*100:.4f}%", 
                          delta=f"{(tweaked['house_edge'] - fair['house_edge'])*100:.4f}%")
                 st.metric("Total Profit", f"${tweaked['total']:.2f}")
-                st.caption(f"Std Dev: ${tweaked['std']:.4f}")
             
-            st.divider()
+            st.caption(f"Standard Deviation: ${tweaked['std']:.4f}")
+            st.caption(f"Difficulty: {tweaked['difficulty']}")
+        
+        st.markdown("---")
+        
+        # Visualizations
+        tab_hist, tab_cum, tab_compare = st.tabs(["📊 Distribution", "📈 Cumulative", "⚖️ Comparison"])
+        
+        with tab_hist:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+            fig.patch.set_facecolor('#1a1a2e' if play_mode == "Tweaked" else '#f0f2f6')
             
-            # Visualizations
-            st.subheader("📈 Comparative Analysis")
+            # Fair game histogram
+            ax1.hist(fair['profits'], bins=40, alpha=0.8, color='#10b981', edgecolor='black')
+            ax1.set_title("Fair Game - Profit Distribution", fontsize=14, color='white' if play_mode == "Tweaked" else 'black')
+            ax1.set_xlabel("Profit per Play ($)", fontsize=11, color='white' if play_mode == "Tweaked" else 'black')
+            ax1.set_ylabel("Frequency", fontsize=11, color='white' if play_mode == "Tweaked" else 'black')
+            ax1.axvline(fair['mean'], color='darkgreen', linestyle='--', linewidth=2, label=f"Mean: ${fair['mean']:.4f}")
+            ax1.legend()
+            ax1.set_facecolor('#16213e' if play_mode == "Tweaked" else 'white')
+            ax1.tick_params(colors='white' if play_mode == "Tweaked" else 'black')
+            ax1.grid(alpha=0.3, color='white' if play_mode == "Tweaked" else 'gray')
             
-            tab_hist, tab_cum, tab_compare = st.tabs(["Profit Distribution", "Cumulative Profit", "Side-by-Side"])
+            # Tweaked game histogram
+            ax2.hist(tweaked['profits'], bins=40, alpha=0.8, color='#e74c3c', edgecolor='black')
+            ax2.set_title("Tweaked Game - Profit Distribution", fontsize=14, color='white' if play_mode == "Tweaked" else 'black')
+            ax2.set_xlabel("Profit per Play ($)", fontsize=11, color='white' if play_mode == "Tweaked" else 'black')
+            ax2.set_ylabel("Frequency", fontsize=11, color='white' if play_mode == "Tweaked" else 'black')
+            ax2.axvline(tweaked['mean'], color='darkred', linestyle='--', linewidth=2, label=f"Mean: ${tweaked['mean']:.4f}")
+            ax2.legend()
+            ax2.set_facecolor('#16213e' if play_mode == "Tweaked" else 'white')
+            ax2.tick_params(colors='white' if play_mode == "Tweaked" else 'black')
+            ax2.grid(alpha=0.3, color='white' if play_mode == "Tweaked" else 'gray')
             
-            with tab_hist:
-                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-                
-                ax1.hist(fair['profits'], bins=40, alpha=0.7, color='green', edgecolor='black')
-                ax1.set_title(f"Fair Game - Profit Distribution")
-                ax1.set_xlabel("Profit per Play ($)")
-                ax1.set_ylabel("Frequency")
-                ax1.axvline(fair['mean'], color='darkgreen', linestyle='--', linewidth=2, label=f"Mean: ${fair['mean']:.4f}")
-                ax1.legend()
-                ax1.grid(alpha=0.3)
-                
-                ax2.hist(tweaked['profits'], bins=40, alpha=0.7, color='red', edgecolor='black')
-                ax2.set_title(f"Tweaked Game - Profit Distribution")
-                ax2.set_xlabel("Profit per Play ($)")
-                ax2.set_ylabel("Frequency")
-                ax2.axvline(tweaked['mean'], color='darkred', linestyle='--', linewidth=2, label=f"Mean: ${tweaked['mean']:.4f}")
-                ax2.legend()
-                ax2.grid(alpha=0.3)
-                
-                plt.tight_layout()
-                st.pyplot(fig)
-                plt.close()
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close()
+        
+        with tab_cum:
+            fig, ax = plt.subplots(figsize=(14, 6))
+            fig.patch.set_facecolor('#1a1a2e' if play_mode == "Tweaked" else '#f0f2f6')
             
-            with tab_cum:
-                fig, ax = plt.subplots(figsize=(12, 5))
-                
-                ax.plot(np.cumsum(fair['profits']), label='Fair Game', linewidth=2, color='green', alpha=0.8)
-                ax.plot(np.cumsum(tweaked['profits']), label='Tweaked Game', linewidth=2, color='red', alpha=0.8)
-                ax.set_title("Cumulative Profit Over Time")
-                ax.set_xlabel("Play Number")
-                ax.set_ylabel("Total Profit ($)")
-                ax.legend()
-                ax.grid(alpha=0.3)
-                
-                plt.tight_layout()
-                st.pyplot(fig)
-                plt.close()
+            ax.plot(np.cumsum(fair['profits']), label='Fair Game', linewidth=2.5, color='#10b981', alpha=0.9)
+            ax.plot(np.cumsum(tweaked['profits']), label='Tweaked Game', linewidth=2.5, color='#e74c3c', alpha=0.9)
+            ax.axhline(y=0, color='white' if play_mode == "Tweaked" else 'gray', linestyle='--', alpha=0.7)
+            ax.set_title("Cumulative Profit Over Time", fontsize=16, color='white' if play_mode == "Tweaked" else 'black')
+            ax.set_xlabel("Play Number", fontsize=12, color='white' if play_mode == "Tweaked" else 'black')
+            ax.set_ylabel("Total Profit ($)", fontsize=12, color='white' if play_mode == "Tweaked" else 'black')
+            ax.legend(fontsize=12)
+            ax.set_facecolor('#16213e' if play_mode == "Tweaked" else 'white')
+            ax.tick_params(colors='white' if play_mode == "Tweaked" else 'black')
+            ax.grid(alpha=0.3, color='white' if play_mode == "Tweaked" else 'gray')
             
-            with tab_compare:
-                # Summary comparison table
-                comparison_df = pd.DataFrame({
-                    'Metric': ['Plays', 'Win Rate (%)', 'Mean Profit/Play ($)', 
-                              'Std Dev ($)', 'House Edge (%)', 'Total Profit ($)'],
-                    'Fair Game': [
-                        f"{fair['plays']:,}",
-                        f"{fair['win_rate']*100:.2f}",
-                        f"{fair['mean']:.4f}",
-                        f"{fair['std']:.4f}",
-                        f"{fair['house_edge']*100:.4f}",
-                        f"{fair['total']:.2f}"
-                    ],
-                    'Tweaked Game': [
-                        f"{tweaked['plays']:,}",
-                        f"{tweaked['win_rate']*100:.2f}",
-                        f"{tweaked['mean']:.4f}",
-                        f"{tweaked['std']:.4f}",
-                        f"{tweaked['house_edge']*100:.4f}",
-                        f"{tweaked['total']:.2f}"
-                    ]
-                })
-                
-                st.dataframe(comparison_df, use_container_width=True, hide_index=True)
-                
-                st.markdown("### 🎯 Key Findings")
-                house_edge_diff = (tweaked['house_edge'] - fair['house_edge']) * 100
-                st.write(f"""
-                - **House Edge Difference**: {house_edge_diff:.4f}% 
-                - The tweaked game creates a **{abs(house_edge_diff):.2f}% advantage** for the house
-                - Over {num_plays:,} plays with ${sim_bet} bets, this translates to 
-                  **${tweaked['total'] - fair['total']:.2f}** more profit for the house
-                - The tweaked model maintains similar variance but shifts the mean payout negatively
-                """)
-        else:
-            st.info("👆 Configure simulation parameters and click 'Run Simulation' to see results")
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close()
+        
+        with tab_compare:
+            # Summary table
+            comparison_df = pd.DataFrame({
+                'Metric': ['Plays', 'Win Rate (%)', 'Mean Profit/Play ($)', 
+                          'Std Dev ($)', 'House Edge (%)', 'Total Profit ($)'],
+                'Fair Game': [
+                    f"{fair['plays']:,}",
+                    f"{fair['win_rate']*100:.2f}",
+                    f"{fair['mean']:.4f}",
+                    f"{fair['std']:.4f}",
+                    f"{fair['house_edge']*100:.4f}",
+                    f"{fair['total']:.2f}"
+                ],
+                'Tweaked Game': [
+                    f"{tweaked['plays']:,}",
+                    f"{tweaked['win_rate']*100:.2f}",
+                    f"{tweaked['mean']:.4f}",
+                    f"{tweaked['std']:.4f}",
+                    f"{tweaked['house_edge']*100:.4f}",
+                    f"{tweaked['total']:.2f}"
+                ]
+            })
+            
+            st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+            
+            st.markdown("### 🎯 Analysis")
+            house_edge_diff = (tweaked['house_edge'] - fair['house_edge']) * 100
+            total_diff = tweaked['total'] - fair['total']
+            
+            st.write(f"""
+            **Key Findings:**
+            
+            - 💰 **House Edge Difference**: {house_edge_diff:.4f}%
+            - 🎰 The tweaked game (**{tweaked['difficulty']}**) creates a **{abs(house_edge_diff):.2f}% advantage** for the house
+            - 💸 Over **{num_plays:,}** plays with **${sim_bet}** bets, the house gains approximately **${abs(total_diff):.2f}** more
+            - 📉 Win rate drops from **{fair['win_rate']*100:.2f}%** to **{tweaked['win_rate']*100:.2f}%**
+            - ⚠️ The tweaked model maintains variance (occasional wins) but shifts mean payout negatively
+            - 🏦 **Bottom line**: The house always wins in the long run
+            """)
+    else:
+        st.info("👆 Configure simulation parameters and click 'Run Full Simulation' to see results")
+
 
 # Tab 3: About
 with tab3:
-    st.header("About This Simulation")
+    st.header("About DICE-EM!")
     
-    st.markdown("""
-    ### 🎲 Stochastic Game Simulation - Color Dice Game
+    col_about1, col_about2 = st.columns([2, 1])
     
-    This project models a Filipino "perya" or casino-style **Color Game** where players bet on dice outcomes.
+    with col_about1:
+        st.markdown("""
+        ### 🎲 The Game That Always Wins (For Us)
+        
+        Welcome to **DICE-EM!** - a Boston mafia-style simulation of a Filipino "perya" color game. 
+        We're here to show you exactly how the house *always* wins. Capisce?
+        
+        #### 🎯 Game Mechanics:
+        
+        - **Six colors**: Red, Blue, Yellow, Green, White, Purple
+        - **You bet on Red** (because we said so)
+        - **Match the color?** You win. **Don't match?** We take your money.
+        - Simple. Brutal. Profitable (for us).
+        
+        #### 🟢 Fair Game (The Honest One):
+        - Equal probability: 16.67% for each color
+        - Fair payout: 5:1 (bet $10, win $50, net +$40)
+        - Expected value: $0 (neither you nor the house makes money... in theory)
+        - **Reality check**: It's fair, but you'll still probably lose
+        
+        #### 🔴 Tweaked Game (The Real Deal):
+        Multiple difficulty levels, each worse than the last:
+        
+        - **Slightly Rigged**: You might not even notice... at first
+        - **Moderately Unfair**: Now the house is smilin'
+        - **Heavily Stacked**: You're gonna lose, pal
+        - **Almost Impossible**: Don't even bother tryin'
+        
+        Each level reduces your winning probability and/or payout. We're in the money-making business, 
+        and business is *good*.
+        
+        #### 🔬 The Science of Losing:
+        
+        This project demonstrates:
+        - **Probability Theory**: How we stack the deck
+        - **Monte Carlo Simulation**: Proof that you'll lose in the long run
+        - **House Edge**: The mathematical guarantee that we win
+        - **Stochastic Systems**: Fancy words for "random, but we still win"
+        
+        #### 💡 Educational Value:
+        
+        Learn about:
+        - Why casinos and perya operators never go broke
+        - How small tweaks create massive advantages
+        - The Law of Large Numbers (spoiler: it favors us)
+        - Variance vs Expected Value (you might win once, but keep playing...)
+        
+        ---
+        
+        ### 🎓 Project Details:
+        
+        **Course**: Stochastic Systems & Monte Carlo Simulation  
+        **Focus**: Probabilistic modeling, house edge analysis, exploratory data analysis  
+        **Technologies**: Python, Streamlit, NumPy, Pandas, Matplotlib
+        
+        """)
     
-    #### Game Rules:
-    1. **Six colored dice faces**: Red, Blue, Yellow, Green, White, Purple
-    2. **Player bets** on one color (default: Red)
-    3. **Dice rolls** - if it matches the bet, player wins; otherwise, loses the bet
-    4. **Payout**: Fair game pays 5:1 (net +5× bet), Tweaked game pays 4.8:1 (net +4.8× bet)
-    
-    #### 🔬 Project Components:
-    
-    **1. Fair Game Model**
-    - Equal probability for each color (16.67%)
-    - Fair payout structure (5:1) ensuring zero house edge
-    - Expected value ≈ 0 for player
-    
-    **2. Tweaked Game Model**
-    Two tweak options:
-    - **Payout Tweak**: Keep fair probabilities but reduce payout to 4.8:1
-    - **Probability Tweak**: Increase Red probability to 20% while adjusting payout accordingly
-    
-    **3. Monte Carlo Simulation**
-    - Run 10,000+ plays to generate statistical data
-    - Analyze win rates, mean returns, variance, and house edge
-    - Visualize profit distributions and cumulative outcomes
-    
-    **4. Exploratory Data Analysis (EDA)**
-    - Compare fair vs tweaked game outcomes
-    - Quantify house edge impact
-    - Show how small tweaks create long-term profit for the house
-    
-    #### 📊 Key Insights:
-    
-    - Even small changes (5:1 → 4.8:1 payout) create significant house edge
-    - The Law of Large Numbers ensures house profitability over many plays
-    - Variance allows occasional player wins but mean converges to house advantage
-    - Visualization shows how cumulative profit diverges between fair and tweaked models
-    
-    #### 🛠️ Technologies:
-    - **Streamlit**: Interactive web interface
-    - **NumPy**: Probability simulation and random sampling
-    - **Matplotlib**: Data visualization
-    - **Pandas**: Data analysis and tabulation
-    
-    ---
-    
-    **Created for**: Stochastic Systems & Monte Carlo Simulation Project  
-    **Focus**: Probabilistic modeling, house edge analysis, and EDA
-    """)
+    with col_about2:
+        st.markdown("### 👥 The Developers")
+        st.markdown("""
+        This masterpiece was created by:
+        
+        - **Maria Angela Matubis**
+        - **Lj Jan Saldivar**
+        - **Jester Carlo Tapit**
+        
+        ---
+        
+        ### 📚 Features:
+        
+        ✅ Interactive gameplay  
+        ✅ Animated dice rolling  
+        ✅ Multiple difficulty levels  
+        ✅ Monte Carlo simulation  
+        ✅ Statistical analysis  
+        ✅ Fair vs Tweaked comparison  
+        ✅ Boston mafia attitude  
+        ✅ Responsive design  
+        
+        ---
+        
+        ### 🎨 Design Philosophy:
+        
+        **Fair Mode**: Fun, colorful, playful - like a real carnival game should be
+        
+        **Tweaked Mode**: Dark, sinister, foreboding - because that's what rigged games feel like
+        
+        ---
+        
+        ### ⚠️ Disclaimer:
+        
+        This is an educational simulation. No real money is involved. 
+        
+        But if it were... we'd be rich by now. 😈
+        
+        ---
+        
+        ### 🏆 Learning Outcomes:
+        
+        - Understanding probability distributions
+        - Monte Carlo methods
+        - Statistical significance
+        - Risk assessment
+        - Why you shouldn't gamble
+        
+        """)
 
 # Footer
-st.divider()
-st.caption("🎲 Color Dice Game | Stochastic Simulation Project | Built with Streamlit")
+st.markdown("---")
+st.markdown("""
+    <div style='text-align: center; padding: 20px;'>
+        <h3>🎲 DICE-EM! 🎲</h3>
+        <p><i>"The house always wins, capisce?"</i></p>
+        <p>© 2025 | Developed by Maria Angela Matubis, Lj Jan Saldivar & Jester Carlo Tapit</p>
+        <p>Stochastic Systems Project | For Educational Purposes</p>
+    </div>
+""", unsafe_allow_html=True)
+
