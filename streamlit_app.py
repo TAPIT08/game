@@ -39,7 +39,7 @@ DIFFICULTY_LEVELS = {
     }
 }
 
-# Boston mafia-style captions
+# Boston mafia-style captions (for Tweaked mode)
 MAFIA_CAPTIONS = [
     "Try your luck, you won't have one.",
     "You sure you wanna play?",
@@ -53,6 +53,20 @@ MAFIA_CAPTIONS = [
     "One more roll... what's the worst that could happen?"
 ]
 
+# Royal English princess captions (for Fair mode)
+PRINCESS_CAPTIONS = [
+    "Good day, dear friend! May fortune smile upon thee.",
+    "Welcome to our fair establishment. Do enjoy yourself!",
+    "My dear, would you care for a game of chance?",
+    "How splendid! Let us play with honour and grace.",
+    "A most delightful game awaits you, dear player.",
+    "May the odds be ever in your favour, good sir or madam!",
+    "Oh, how wonderful! Please, do have a lovely time.",
+    "Welcome! We play by the fairest of rules here.",
+    "Greetings, noble player! Shall we test our luck together?",
+    "What a joy to have you! May your rolls be fortunate!"
+]
+
 UNICODE_DICE = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"]
 COLOR_HEX = {
     "Red": "#e74c3c",
@@ -64,54 +78,90 @@ COLOR_HEX = {
 }
 
 # Custom CSS for themes
-def load_custom_css(mode):
+def load_custom_css(mode, difficulty=None):
     if mode == "Fair":
-        # Fun, playful theme
+        # Fun, playful, royal theme
         st.markdown("""
         <style>
         .main {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 50%, #ffecd2 100%);
+            animation: gentle-shift 10s ease-in-out infinite;
+        }
+        @keyframes gentle-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
         .stButton>button {
-            background: linear-gradient(90deg, #56ab2f 0%, #a8e063 100%);
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             color: white;
             font-weight: bold;
-            border-radius: 20px;
-            border: none;
-            padding: 12px 24px;
+            border-radius: 25px;
+            border: 3px solid gold;
+            padding: 14px 28px;
             font-size: 18px;
             transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            font-family: 'Georgia', serif;
         }
         .stButton>button:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+            border-color: #ffd700;
         }
         h1, h2, h3 {
-            color: #ffffff !important;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            color: #4a148c !important;
+            text-shadow: 2px 2px 4px rgba(255, 215, 0, 0.3);
+            font-family: 'Georgia', serif;
         }
         .dice-container {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: 4px solid gold;
             border-radius: 25px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            animation: pulse 2s infinite;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+            animation: royal-pulse 2s infinite;
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
+        @keyframes royal-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 15px 40px rgba(255, 215, 0, 0.6); }
         }
         </style>
         """, unsafe_allow_html=True)
     else:
-        # Sinister, evil theme
-        st.markdown("""
+        # Progressive chaos based on difficulty
+        if difficulty == "Slightly Rigged":
+            bg_gradient = "linear-gradient(135deg, #2c1a1a 0%, #1a1a2e 50%, #16213e 100%)"
+            pulse_intensity = "0.3"
+            rotation_range = "2deg"
+        elif difficulty == "Moderately Unfair":
+            bg_gradient = "linear-gradient(135deg, #1a0000 0%, #2d0a0a 25%, #0f0e17 50%, #1a0505 75%, #0a0000 100%)"
+            pulse_intensity = "0.5"
+            rotation_range = "5deg"
+        elif difficulty == "Heavily Stacked":
+            bg_gradient = "linear-gradient(135deg, #0a0000 0%, #1a0000 20%, #2d0000 40%, #1a0000 60%, #0a0000 80%, #050000 100%)"
+            pulse_intensity = "0.7"
+            rotation_range = "10deg"
+        else:  # Almost Impossible
+            bg_gradient = "linear-gradient(135deg, #000000 0%, #0a0000 10%, #1a0000 20%, #0a0000 30%, #000000 40%, #050000 50%, #000000 60%, #0a0000 70%, #1a0000 80%, #050000 90%, #000000 100%)"
+            pulse_intensity = "0.9"
+            rotation_range = "15deg"
+        
+        # Sinister, evil theme with progressive chaos
+        st.markdown(f"""
         <style>
-        .main {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0e17 100%);
-        }
-        .stButton>button {
+        .main {{
+            background: {bg_gradient};
+            background-size: 400% 400%;
+            animation: chaotic-shift 3s ease-in-out infinite;
+        }}
+        @keyframes chaotic-shift {{
+            0% {{ background-position: 0% 50%; }}
+            25% {{ background-position: 100% 50%; }}
+            50% {{ background-position: 50% 100%; }}
+            75% {{ background-position: 0% 0%; }}
+            100% {{ background-position: 0% 50%; }}
+        }}
+        .stButton>button {{
             background: linear-gradient(90deg, #8b0000 0%, #dc143c 50%, #8b0000 100%);
             color: #ffffff;
             font-weight: bold;
@@ -120,41 +170,49 @@ def load_custom_css(mode):
             padding: 12px 24px;
             font-size: 18px;
             transition: all 0.3s;
-            box-shadow: 0 0 20px rgba(255,0,0,0.5);
-            text-shadow: 0 0 10px rgba(255,0,0,0.8);
-        }
-        .stButton>button:hover {
-            transform: scale(1.05) rotate(2deg);
-            box-shadow: 0 0 30px rgba(255,0,0,0.8);
-            background: linear-gradient(90deg, #dc143c 0%, #8b0000 50%, #dc143c 100%);
-        }
-        h1, h2, h3 {
-            color: #ff4444 !important;
-            text-shadow: 0 0 10px rgba(255,0,0,0.5), 2px 2px 4px rgba(0,0,0,0.8);
+            box-shadow: 0 0 20px rgba(255, 0, 0, {pulse_intensity});
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
             font-family: 'Courier New', monospace;
-        }
-        .dice-container {
+        }}
+        .stButton>button:hover {{
+            transform: scale(1.05) rotate({rotation_range});
+            box-shadow: 0 0 30px rgba(255, 0, 0, {pulse_intensity});
+            background: linear-gradient(90deg, #dc143c 0%, #8b0000 50%, #dc143c 100%);
+        }}
+        h1, h2, h3 {{
+            color: #ff4444 !important;
+            text-shadow: 0 0 15px rgba(255, 0, 0, {pulse_intensity}), 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-family: 'Courier New', monospace;
+            animation: flicker 2s infinite;
+        }}
+        @keyframes flicker {{
+            0%, 100% {{ opacity: 1; }}
+            50% {{ opacity: 0.8; }}
+        }}
+        .dice-container {{
             background: linear-gradient(135deg, #2d1b1b 0%, #1a0505 100%);
             border: 3px solid #8b0000;
             border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 0 40px rgba(255,0,0,0.4), inset 0 0 20px rgba(0,0,0,0.8);
+            box-shadow: 0 0 40px rgba(255, 0, 0, {pulse_intensity}), inset 0 0 20px rgba(0, 0, 0, 0.8);
             animation: sinister-pulse 1.5s infinite;
-        }
-        @keyframes sinister-pulse {
-            0%, 100% { 
-                box-shadow: 0 0 40px rgba(255,0,0,0.4), inset 0 0 20px rgba(0,0,0,0.8);
-            }
-            50% { 
-                box-shadow: 0 0 60px rgba(255,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.9);
-                transform: scale(1.01);
-            }
-        }
-        .sidebar .sidebar-content {
+        }}
+        @keyframes sinister-pulse {{
+            0%, 100% {{ 
+                box-shadow: 0 0 40px rgba(255, 0, 0, {pulse_intensity}), inset 0 0 20px rgba(0, 0, 0, 0.8);
+                transform: rotate(-{rotation_range});
+            }}
+            50% {{ 
+                box-shadow: 0 0 60px rgba(255, 0, 0, {float(pulse_intensity) + 0.2}), inset 0 0 30px rgba(0, 0, 0, 0.9);
+                transform: scale(1.02) rotate({rotation_range});
+            }}
+        }}
+        .sidebar .sidebar-content {{
             background: linear-gradient(180deg, #1a0505 0%, #0a0000 100%);
-        }
+        }}
         </style>
         """, unsafe_allow_html=True)
+
 
 
 # Initialize session state
@@ -172,10 +230,14 @@ if 'last_profit' not in st.session_state:
     st.session_state.last_profit = None
 if 'mafia_caption' not in st.session_state:
     st.session_state.mafia_caption = random.choice(MAFIA_CAPTIONS)
+if 'princess_caption' not in st.session_state:
+    st.session_state.princess_caption = random.choice(PRINCESS_CAPTIONS)
 if 'dice_animation' not in st.session_state:
     st.session_state.dice_animation = False
 if 'animation_frames' not in st.session_state:
     st.session_state.animation_frames = []
+if 'current_mode' not in st.session_state:
+    st.session_state.current_mode = "Fair"
 
 # Simulation functions
 def simulate_game(mode, plays=20000, bet=1.0, difficulty="Slightly Rigged"):
@@ -267,12 +329,15 @@ def animate_dice(mode, placeholder, num_spins=15):
     return True
 
 # Title and caption
+current_caption = st.session_state.princess_caption if st.session_state.current_mode == "Fair" else st.session_state.mafia_caption
+caption_style = "color: #4a148c; font-family: 'Georgia', serif;" if st.session_state.current_mode == "Fair" else "color: #ff4444; font-family: 'Courier New', monospace;"
+
 st.markdown(f"""
     <h1 style='text-align: center; font-size: 72px; margin-bottom: 0;'>
         🎲 DICE-EM! 🎲
     </h1>
-    <p style='text-align: center; font-size: 24px; font-style: italic; margin-top: 10px; opacity: 0.9;'>
-        "{st.session_state.mafia_caption}"
+    <p style='text-align: center; font-size: 24px; font-style: italic; margin-top: 10px; opacity: 0.9; {caption_style}'>
+        "{current_caption}"
     </p>
 """, unsafe_allow_html=True)
 
@@ -284,13 +349,19 @@ with st.sidebar:
     
     # Mode selection
     play_mode = st.radio(
-        "Choose Your Fate:",
+        "Choose Your Fate:" if st.session_state.current_mode == "Tweaked" else "Select Game Mode:",
         ["Fair", "Tweaked"],
-        help="Fair: Honest game. Tweaked: The house has... advantages."
+        help="Fair: Honest game with equal odds. Tweaked: The house has... advantages." if st.session_state.current_mode == "Tweaked" else "Fair: A noble game with equal chances for all. Tweaked: Less favourable odds, I'm afraid."
     )
     
-    # Load theme based on mode
-    load_custom_css(play_mode)
+    # Update current mode and regenerate caption if mode changed
+    if play_mode != st.session_state.current_mode:
+        st.session_state.current_mode = play_mode
+        if play_mode == "Fair":
+            st.session_state.princess_caption = random.choice(PRINCESS_CAPTIONS)
+        else:
+            st.session_state.mafia_caption = random.choice(MAFIA_CAPTIONS)
+        st.rerun()
     
     # Difficulty for tweaked mode
     difficulty = None
@@ -302,16 +373,27 @@ with st.sidebar:
             value="Moderately Unfair"
         )
         st.caption(DIFFICULTY_LEVELS[difficulty]["description"])
+        
+        # Load theme with difficulty
+        load_custom_css(play_mode, difficulty)
+    else:
+        # Load fair theme
+        load_custom_css(play_mode)
     
     st.markdown("---")
     
-    # Bet amount
+    # Bet amount with mode-specific limits
+    min_bet = 100 if play_mode == "Tweaked" else 1
+    bet_label = "💰 Wager Amount:" if play_mode == "Fair" else "💰 Bet Amount (Minimum $100):"
+    bet_help = "Place your wager, dear player." if play_mode == "Fair" else "Minimum bet is $100. High rollers only."
+    
     bet_amount = st.number_input(
-        "💰 Bet Amount:",
-        min_value=1,
-        max_value=1000,
-        value=10,
-        step=5
+        bet_label,
+        min_value=min_bet,
+        max_value=10000,
+        value=max(10, min_bet),
+        step=10 if play_mode == "Fair" else 50,
+        help=bet_help
     )
     
     st.markdown("---")
@@ -327,6 +409,7 @@ with st.sidebar:
     st.markdown("---")
     st.caption("© 2025 DICE-EM! | Perya Simulation")
 
+
 tab1, tab2, tab3 = st.tabs(["🎮 Play Now", "📊 Run Simulation", "ℹ️ About"])
 
 # Tab 1: Interactive Play
@@ -334,7 +417,12 @@ with tab1:
     col_left, col_right = st.columns([3, 2])
     
     with col_left:
-        st.subheader("🎲 Dice Roll Area")
+        # Mode-specific text
+        roll_btn_text = "🎲 Roll the Royal Dice" if play_mode == "Fair" else "🎲 ROLL THE DICE"
+        reset_btn_text = "🔄 Start Anew" if play_mode == "Fair" else "🔄 Reset Game"
+        header_text = "🎲 The Royal Dice Chamber" if play_mode == "Fair" else "🎲 Dice Roll Area"
+        
+        st.subheader(header_text)
         
         # Dice display area
         dice_placeholder = st.empty()
@@ -360,28 +448,48 @@ with tab1:
             """, unsafe_allow_html=True)
             
             if st.session_state.last_profit > 0:
-                result_placeholder.success(f"🎉 WINNER! You won ${st.session_state.last_profit:.2f}!", icon="💰")
+                if play_mode == "Fair":
+                    result_placeholder.success(f"🎊 Splendid! You've won ${st.session_state.last_profit:.2f}! How delightful!", icon="👑")
+                else:
+                    result_placeholder.success(f"🎉 WINNER! You won ${st.session_state.last_profit:.2f}!", icon="💰")
             else:
-                result_placeholder.error(f"💀 YOU LOSE! Lost ${abs(st.session_state.last_profit):.2f}", icon="😈")
+                if play_mode == "Fair":
+                    result_placeholder.error(f"😔 Oh dear, you've lost ${abs(st.session_state.last_profit):.2f}. Perhaps next time?", icon="🌹")
+                else:
+                    result_placeholder.error(f"💀 YOU LOSE! Lost ${abs(st.session_state.last_profit):.2f}", icon="😈")
         else:
-            dice_placeholder.markdown("""
-                <div class="dice-container" style="text-align: center;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 30px; display: inline-block; min-width: 200px;">
-                        <h1 style="font-size: 120px; margin: 0; color: white;">
-                            ⚀
-                        </h1>
-                        <h2 style="margin: 10px 0; color: white; font-size: 24px;">
-                            Ready to roll?
-                        </h2>
+            if play_mode == "Fair":
+                dice_placeholder.markdown("""
+                    <div class="dice-container" style="text-align: center;">
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: 3px solid gold; border-radius: 20px; padding: 30px; display: inline-block; min-width: 200px;">
+                            <h1 style="font-size: 120px; margin: 0; color: white;">
+                                ⚀
+                            </h1>
+                            <h2 style="margin: 10px 0; color: white; font-size: 24px; font-family: 'Georgia', serif;">
+                                Awaiting your roll, noble player
+                            </h2>
+                        </div>
                     </div>
-                </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+            else:
+                dice_placeholder.markdown("""
+                    <div class="dice-container" style="text-align: center;">
+                        <div style="background: linear-gradient(135deg, #2d1b1b 0%, #1a0505 100%); border: 3px solid #8b0000; border-radius: 20px; padding: 30px; display: inline-block; min-width: 200px;">
+                            <h1 style="font-size: 120px; margin: 0; color: #ff4444;">
+                                ⚀
+                            </h1>
+                            <h2 style="margin: 10px 0; color: #ff4444; font-size: 24px;">
+                                Ready to lose?
+                            </h2>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
         
         # Action buttons
         col_btn1, col_btn2 = st.columns(2)
         
         with col_btn1:
-            if st.button("🎲 ROLL THE DICE", type="primary", use_container_width=True):
+            if st.button(roll_btn_text, type="primary", use_container_width=True):
                 # Animate dice
                 animate_dice(play_mode, dice_placeholder, num_spins=15 if play_mode == "Fair" else 20)
                 
@@ -396,47 +504,56 @@ with tab1:
                 st.rerun()
         
         with col_btn2:
-            if st.button("🔄 Reset Game", use_container_width=True):
+            if st.button(reset_btn_text, use_container_width=True):
                 st.session_state.total_profit = 0.0
                 st.session_state.plays = 0
                 st.session_state.history = []
                 st.session_state.outcome_history = []
                 st.session_state.last_outcome = None
                 st.session_state.last_profit = None
-                st.session_state.mafia_caption = random.choice(MAFIA_CAPTIONS)
+                if play_mode == "Fair":
+                    st.session_state.princess_caption = random.choice(PRINCESS_CAPTIONS)
+                else:
+                    st.session_state.mafia_caption = random.choice(MAFIA_CAPTIONS)
                 st.rerun()
     
     with col_right:
-        st.subheader("📊 Your Stats")
+        stats_header = "📊 Your Performance Record" if play_mode == "Fair" else "📊 Your Stats"
+        st.subheader(stats_header)
         
         # Metrics
         col_m1, col_m2 = st.columns(2)
         with col_m1:
-            st.metric("Total Plays", st.session_state.plays)
+            plays_label = "Rounds Played" if play_mode == "Fair" else "Total Plays"
+            st.metric(plays_label, st.session_state.plays)
         with col_m2:
             profit_delta = f"${st.session_state.last_profit:.2f}" if st.session_state.last_profit else None
-            st.metric("Total Profit", f"${st.session_state.total_profit:.2f}", delta=profit_delta)
+            profit_label = "Total Winnings" if play_mode == "Fair" else "Total Profit"
+            st.metric(profit_label, f"${st.session_state.total_profit:.2f}", delta=profit_delta)
         
         # Show history charts
         if len(st.session_state.history) > 1:
-            st.markdown("#### 📈 Performance")
+            perf_header = "#### 📈 Progress Chart" if play_mode == "Fair" else "#### 📈 Performance"
+            st.markdown(perf_header)
             
             # Cumulative profit
             fig, ax = plt.subplots(figsize=(6, 3))
             cumulative = np.cumsum(st.session_state.history)
-            ax.plot(cumulative, linewidth=2, color='#e74c3c' if cumulative[-1] < 0 else '#10b981')
+            line_color = '#764ba2' if play_mode == "Fair" else ('#e74c3c' if cumulative[-1] < 0 else '#10b981')
+            ax.plot(cumulative, linewidth=2, color=line_color)
             ax.axhline(y=0, color='white', linestyle='--', alpha=0.5)
-            ax.set_title("Cumulative Profit", fontsize=12, color='white')
-            ax.set_xlabel("Play Number", fontsize=10, color='white')
-            ax.set_ylabel("Total Profit ($)", fontsize=10, color='white')
-            ax.set_facecolor('#1a1a2e' if play_mode == "Tweaked" else '#667eea')
+            chart_title = "Cumulative Winnings" if play_mode == "Fair" else "Cumulative Profit"
+            ax.set_title(chart_title, fontsize=12, color='white' if play_mode == "Tweaked" else '#4a148c')
+            ax.set_xlabel("Round Number" if play_mode == "Fair" else "Play Number", fontsize=10, color='white' if play_mode == "Tweaked" else '#4a148c')
+            ax.set_ylabel("Total Amount ($)", fontsize=10, color='white' if play_mode == "Tweaked" else '#4a148c')
+            ax.set_facecolor('#1a1a2e' if play_mode == "Tweaked" else '#ffecd2')
             fig.patch.set_facecolor('none')
-            ax.tick_params(colors='white')
-            ax.spines['bottom'].set_color('white')
-            ax.spines['left'].set_color('white')
+            ax.tick_params(colors='white' if play_mode == "Tweaked" else '#4a148c')
+            ax.spines['bottom'].set_color('white' if play_mode == "Tweaked" else '#4a148c')
+            ax.spines['left'].set_color('white' if play_mode == "Tweaked" else '#4a148c')
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
-            ax.grid(alpha=0.2, color='white')
+            ax.grid(alpha=0.2, color='white' if play_mode == "Tweaked" else '#4a148c')
             st.pyplot(fig)
             plt.close()
             
@@ -444,14 +561,18 @@ with tab1:
             wins = sum(1 for p in st.session_state.history if p > 0)
             losses = sum(1 for p in st.session_state.history if p <= 0)
             
-            st.markdown("#### 🎯 Win/Loss Ratio")
+            ratio_header = "#### 🎯 Victory Record" if play_mode == "Fair" else "#### 🎯 Win/Loss Ratio"
+            st.markdown(ratio_header)
             col_w, col_l = st.columns(2)
             with col_w:
-                st.metric("Wins", wins, f"{wins/len(st.session_state.history)*100:.1f}%")
+                win_label = "Victories" if play_mode == "Fair" else "Wins"
+                st.metric(win_label, wins, f"{wins/len(st.session_state.history)*100:.1f}%")
             with col_l:
-                st.metric("Losses", losses, f"{losses/len(st.session_state.history)*100:.1f}%")
+                loss_label = "Defeats" if play_mode == "Fair" else "Losses"
+                st.metric(loss_label, losses, f"{losses/len(st.session_state.history)*100:.1f}%")
         else:
-            st.info("Roll the dice to start tracking your stats!")
+            info_msg = "Play a round to begin tracking your noble performance!" if play_mode == "Fair" else "Roll the dice to start tracking your stats!"
+            st.info(info_msg)
 
 
 # Tab 2: Monte Carlo Simulation
