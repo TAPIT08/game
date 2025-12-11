@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import argparse
+import os
 
 # Interactive Dice-style Color Game
 # - Animates a rolling die (unicode faces)
@@ -174,5 +176,109 @@ class ColorDiceGame(tk.Tk):
 
 
 if __name__ == "__main__":
-    app = ColorDiceGame()
-    app.mainloop()
+    parser = argparse.ArgumentParser(description="Color Dice Game — GUI or Monte Carlo simulation")
+    parser.add_argument("--simulate", action="store_true", help="Run Monte Carlo simulations instead of launching the GUI")
+    parser.add_argument("--plays", type=int, default=20000, help="Number of plays per simulation (default: 20000)")
+    parser.add_argument("--bet", type=float, default=1.0, help="Bet amount per play (default: 1.0)")
+    parser.add_argument("--tweak", choices=["payout", "prob"], default="payout", help="Which tweak to apply for the tweaked model")
+    args = parser.parse_args()
+
+    def simulate_once(probs, payout_net, chosen_idx, plays, bet):
+        outcomes = np.random.choice(len(probs), size=plays, p=probs)
+        wins = outcomes == chosen_idx
+        profits = np.where(wins, payout_net * bet, -bet)
+        return profits
+
+    def run_simulation(mode, plays=20000, bet=1.0, tweak_type="payout"):
+        chosen_color = "Red"
+        chosen_idx = colors.index(chosen_color)
+        p_fair = np.array([1/6.0] * 6)
+
+        if mode == "fair":
+            probs = p_fair
+            payout_net = (1 - p_fair[chosen_idx]) / p_fair[chosen_idx]
+        elif mode == "tweaked":
+            if tweak_type == "payout":
+                probs = p_fair
+                payout_net = 4.8
+            else:
+                # increase house chance for the chosen color to 20%
+                probs = np.array([0.2] + [0.8 / 5.0] * 5)
+                payout_net = (1 - probs[chosen_idx]) / probs[chosen_idx]
+        else:
+            raise ValueError("Unknown mode")
+
+        profits = simulate_once(probs, payout_net, chosen_idx, plays, bet)
+        total = profits.sum()
+        mean = profits.mean()
+        std = profits.std()
+        win_rate = (profits > 0).mean()
+        house_edge = -mean / bet
+
+        out_dir = os.path.join(os.path.dirname(__file__), "sim_outputs")
+        os.makedirs(out_dir, exist_ok=True)
+
+        # Save histogram
+        hist_path = os.path.join(out_dir, f"hist_{mode}_{tweak_type}_{plays}.png")
+        plt.figure(figsize=(8, 4))
+        plt.hist(profits, bins=40, alpha=0.7)
+        plt.title(f"Profit Distribution — {mode} ({tweak_type})")
+        plt.xlabel("Profit per Play")
+        plt.ylabel("Frequency")
+        plt.tight_layout()
+        plt.savefig(hist_path)
+        plt.close()
+
+        # Cumulative profit
+        cum_path = os.path.join(out_dir, f"cumulative_{mode}_{tweak_type}_{plays}.png")
+        plt.figure(figsize=(8, 4))
+        plt.plot(np.cumsum(profits))
+        plt.title(f"Cumulative Profit — {mode} ({tweak_type})")
+        plt.xlabel("Play Number")
+        plt.ylabel("Total Profit")
+        plt.tight_layout()
+        plt.savefig(cum_path)
+        plt.close()
+
+        # Save CSV summary
+        df = pd.DataFrame({"profit": profits})
+        csv_path = os.path.join(out_dir, f"results_{mode}_{tweak_type}_{plays}.csv")
+        df.to_csv(csv_path, index=False)
+
+        return {
+            "mode": mode,
+            "tweak": tweak_type,
+            "plays": plays,
+            "bet": bet,
+            "total": float(total),
+            "mean": float(mean),
+            "std": float(std),
+            "win_rate": float(win_rate),
+            "house_edge": float(house_edge),
+            "hist": hist_path,
+            "cumulative": cum_path,
+            "csv": csv_path,
+        }
+
+    if args.simulate:
+        print(f"Running simulations: {args.plays} plays per model, bet={args.bet}, tweak={args.tweak}")
+        fair_stats = run_simulation("fair", plays=args.plays, bet=args.bet, tweak_type=args.tweak)
+        tweaked_stats = run_simulation("tweaked", plays=args.plays, bet=args.bet, tweak_type=args.tweak)
+
+        def print_stats(s):
+            print("---")
+            print(f"Mode: {s['mode']} (tweak={s['tweak']})")
+            print(f"Plays: {s['plays']}")
+            print(f"Total player profit: ${s['total']:.2f}")
+            print(f"Mean profit per play: ${s['mean']:.4f}")
+            print(f"Stddev: ${s['std']:.4f}")
+            print(f"Win rate: {s['win_rate']*100:.2f}%")
+            print(f"Estimated house edge: {s['house_edge']*100:.4f}%")
+            print(f"Outputs: {s['hist']}, {s['cumulative']}, {s['csv']}")
+
+        print_stats(fair_stats)
+        print_stats(tweaked_stats)
+        print("Simulation outputs written to 'sim_outputs' next to the script.")
+    else:
+        app = ColorDiceGame()
+        app.mainloop()
